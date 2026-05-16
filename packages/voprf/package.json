@@ -1,0 +1,13 @@
+{
+  "name": "@bbnew/voprf",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@bbnew/shared": "*",
+    "@cloudflare/voprf-ts": "^1.0.0"
+  }
+}

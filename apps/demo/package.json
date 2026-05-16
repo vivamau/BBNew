@@ -1,0 +1,12 @@
+{
+  "name": "@bbnew/demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@bbnew/ledger": "*",
+    "@bbnew/member": "*",
+    "@bbnew/shared": "*",
+    "@bbnew/voprf": "*"
+  }
+}

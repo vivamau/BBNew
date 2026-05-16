@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BBNew — Privacy-Preserving Cross-Member Wallet Deduplication</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222535;
+      --border: #2e3347;
+      --accent: #5b8af5;
+      --accent2: #7ed4a4;
+      --accent3: #f0a050;
+      --accent4: #e06070;
+      --text: #d4d8e8;
+      --text-muted: #7880a0;
+      --text-bright: #eef0f8;
+      --code-bg: #12141e;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: -0.5px;
+    }
+    header .tagline {
+      margin-top: 0.4rem;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+    header .badges {
+      margin-top: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.2rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .badge.green { border-color: var(--accent2); color: var(--accent2); }
+    .badge.blue  { border-color: var(--accent);  color: var(--accent); }
+    .badge.orange{ border-color: var(--accent3); color: var(--accent3); }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15,17,23,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    nav a {
+      display: block;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    nav a:hover { color: var(--text-bright); text-decoration: none; border-color: var(--accent); }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    section { margin-bottom: 3.5rem; }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin: 1.5rem 0 0.6rem;
+    }
+    p { margin-bottom: 0.85rem; }
+
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    .callout.warn { border-left-color: var(--accent3); }
+    .callout.danger { border-left-color: var(--accent4); }
+    .callout.success { border-left-color: var(--accent2); }
+
+    code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.4em;
+      font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+      font-size: 0.85em;
+      color: var(--accent2);
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .kw  { color: #c792ea; }
+    .fn  { color: #82aaff; }
+    .str { color: #c3e88d; }
+    .cm  { color: var(--text-muted); font-style: italic; }
+    .num { color: #f78c6c; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+    }
+    th {
+      background: var(--surface2);
+      color: var(--text-bright);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 0.55rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface); }
+
+    /* ── SVG Diagram ─────────────────────────────────────────── */
+    .diagram-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+    .diagram-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+
+    /* ── Step list ─────────────────────────────────────────────── */
+    ol.steps { padding-left: 0; list-style: none; counter-reset: step; }
+    ol.steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    ol.steps li::before {
+      content: counter(step);
+      flex-shrink: 0;
+      width: 1.8rem;
+      height: 1.8rem;
+      line-height: 1.8rem;
+      text-align: center;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 0.1rem;
+    }
+    ol.steps li div strong { color: var(--text-bright); }
+
+    /* ── Package cards ─────────────────────────────────────────── */
+    .pkg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .pkg-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+    .pkg-card .name {
+      font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+    }
+    .pkg-card .desc { font-size: 0.88rem; color: var(--text-muted); }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>BBNew</h1>
+  <p class="tagline">Privacy-preserving cross-member beneficiary wallet deduplication &mdash; WFP Building Blocks gap prototype</p>
+  <div class="badges">
+    <span class="badge blue">TypeScript</span>
+    <span class="badge blue">RFC 9497 VOPRF</span>
+    <span class="badge blue">AES-256-GCM</span>
+    <span class="badge green">0 known vulnerabilities</span>
+    <span class="badge orange">Simulation / Prototype</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#problem">Problem</a>
+  <a href="#approach">Approach</a>
+  <a href="#protocol">Protocol</a>
+  <a href="#flow-diagram">Flow Diagram</a>
+  <a href="#packages">Packages</a>
+  <a href="#usage">Usage</a>
+  <a href="#endpoints">API Endpoints</a>
+  <a href="#limitations">Limitations</a>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════ PROBLEM ════════════════════════════════ -->
+<section id="problem">
+  <h2>The Problem</h2>
+  <p>
+    WFP <strong>Building Blocks</strong> runs as a network of independent
+    <em>network-members</em> — organisations each running their own node, backend, and
+    local database. Every member stores only the
+    <code>{common-identifier → proxy wallet}</code> mappings for beneficiaries
+    <em>it</em> onboarded.
+  </p>
+  <p>
+    When member <strong>A</strong> onboards a person and mints a wallet, and later
+    member <strong>B</strong> assists the <strong>same person</strong>, B cannot discover
+    that a wallet already exists. The person ends up with two wallets, breaking
+    redemption and deduplication.
+  </p>
+
+  <div class="callout danger">
+    <strong>The constraint:</strong> the common identifier (National ID, UNHCR ID, Tax ID)
+    is PII — <em>even when hashed</em>. It must never cross the member-to-member wire,
+    never be stored on chain, and the beneficiary is not online to self-verify.
+  </div>
+
+  <p>
+    BBNew lets any member privately answer <em>"does a wallet already exist for this
+    person, and what is it?"</em> with mathematically-enforced data minimisation:
+    no PII on the wire, no cleartext wallet on the wire, no central server.
+  </p>
+</section>
+
+<!-- ═══════════════════════════════ APPROACH ══════════════════════════════ -->
+<section id="approach">
+  <h2>Cryptographic Approach</h2>
+
+  <h3>1 &mdash; VOPRF (RFC 9497, P-256/SHA-256)</h3>
+  <p>
+    A <strong>Verifiable Oblivious Pseudo-Random Function</strong> lets member B
+    (the <em>querier</em>) compute a per-responder pseudonym for an identifier without
+    the identifier ever leaving B's perimeter and without B learning the OPRF key.
+  </p>
+  <ul style="margin: 0.5rem 0 0.85rem 1.5rem; line-height: 1.8;">
+    <li>B <em>blinds</em> the normalised identifier (multiplies by a random scalar on P-256) → opaque elliptic-curve point.</li>
+    <li>A <em>evaluates</em> the blinded point with its private key → evaluated point + DLEQ proof.</li>
+    <li>B <em>unblinds</em> and verifies the DLEQ proof → pseudonym <code>raw</code>.</li>
+    <li>The DLEQ proof guarantees A used the same key for all queries — preventing per-query fingerprinting.</li>
+  </ul>
+
+  <h3>2 &mdash; Match-oblivious Fixed-Length AEAD Lookup</h3>
+  <p>
+    B derives a 16-byte <em>lookup tag</em> and a 32-byte <em>encryption key</em>
+    from the VOPRF output via HKDF-SHA-256. B sends only the tag to A.
+    A always returns a <strong>fixed-length 112-byte blob</strong>:
+  </p>
+  <ul style="margin: 0.5rem 0 0.85rem 1.5rem; line-height: 1.8;">
+    <li><strong>Hit:</strong> real AES-256-GCM ciphertext of <code>{"o":"M1","w":"0xabc…"}</code> (owner + wallet, padded to 96 bytes).</li>
+    <li><strong>Miss:</strong> <code>randomBytes(112)</code> — byte-for-byte indistinguishable from a real ciphertext.</li>
+  </ul>
+  <p>
+    Only B — who independently re-derived the OPRF output and thus the encryption key —
+    can distinguish hit from miss by attempting GCM decryption. A never learns B's decision.
+  </p>
+
+  <h3>3 &mdash; No-Duplicate-Wallet Fan-Out</h3>
+  <p>
+    When onboarding a new beneficiary, a member first checks locally, then queries all
+    peers in deterministic order (lexicographic <code>memberId</code>). If any peer
+    returns a hit, the member <em>adopts</em> the existing wallet (smallest-owner wins)
+    rather than minting a new one.
+  </p>
+
+  <h3>4 &mdash; Versioned Key Rotation</h3>
+  <p>
+    Each member can rotate its OPRF key. The new key version is derived
+    deterministically from the master seed (<code>deriveKeyPair(masterSeed, v)</code>),
+    and the local pseudonym table is rebuilt from the member's own cleartext ID store
+    (which it legitimately holds). The old version enters a brief <em>grace</em> window
+    then is <em>retired</em> — old pseudonyms become permanently unresolvable, bounding
+    the cross-member linkage window.
+  </p>
+
+  <h3>5 &mdash; Concurrent-Onboarding Reconciliation</h3>
+  <p>
+    If two members onboard the same brand-new person simultaneously they may each mint a
+    wallet. The <em>deterministic-owner</em> total order (lexicographic
+    <code>memberId</code>) designates the authoritative wallet. Any member can run
+    <code>POST /admin/reconcile</code> to call <code>ledger.mergeWallets(loser, winner)</code>
+    and re-point its local mapping. With no coordinator, all members converge.
+  </p>
+</section>
+
+<!-- ═══════════════════════════════ PROTOCOL ══════════════════════════════ -->
+<section id="protocol">
+  <h2>Protocol Step-by-Step</h2>
+  <p>Single cross-member query: member <strong>B</strong> asks member <strong>A</strong> whether it knows a wallet for normalised identifier <code>id</code>.</p>
+  <ol class="steps">
+    <li><div><strong>Meta fetch</strong><br>
+      B calls <code>GET A/meta</code> → <code>{ activeKeyVersion, activePublicKeyB64 }</code>. B now knows A's current OPRF public key without learning the private key.</div></li>
+    <li><div><strong>Blind</strong><br>
+      B blinds <code>utf8(normalize(id))</code> using A's public key:
+      <code>OprfSession.blind(pk_A, message)</code> → an elliptic-curve point that is
+      information-theoretically independent of <code>id</code>.</div></li>
+    <li><div><strong>Evaluate</strong><br>
+      B sends <code>POST A/oprf/evaluate { keyVersion, evaluationRequestB64 }</code>.
+      A evaluates with its private key and returns <code>{ evaluationB64 }</code> plus an
+      embedded DLEQ proof.</div></li>
+    <li><div><strong>Finalize &amp; verify DLEQ</strong><br>
+      B calls <code>session.finalizeAndVerify(evaluationB64)</code>. If the DLEQ proof fails
+      — meaning A used a different key for this query — an exception is thrown and the
+      result is discarded.</div></li>
+    <li><div><strong>Derive tag and encryption key</strong><br>
+      B derives <code>tag = HKDF(raw, "BBNew/tag/v{v}", "lookup-key")[:16]</code> and
+      <code>encKey = HKDF(raw, "BBNew/enc/v{v}", "wallet-wrap")[:32]</code>.
+      These are computed locally; only the tag crosses the wire.</div></li>
+    <li><div><strong>Lookup</strong><br>
+      B sends <code>POST A/lookup { keyVersion, tagB64 }</code>. A always returns
+      <code>{ nonceB64, blobB64 }</code> — 112 bytes regardless of hit or miss.</div></li>
+    <li><div><strong>Decrypt (or discard)</strong><br>
+      B attempts <code>AES-256-GCM decrypt(encKey, nonce, blob, aad)</code> where
+      <code>aad = "BBNew|{v}|{tagHex}"</code>. Authentication success → wallet found at A.
+      Authentication failure → A has no wallet for this person. A never learns the outcome.</div></li>
+  </ol>
+</section>
+
+<!-- ══════════════════════════════ FLOW DIAGRAM ═══════════════════════════ -->
+<section id="flow-diagram">
+  <h2>Flow Diagram</h2>
+  <p>The diagram below shows a full cross-member query from member B (querier) to member A (responder). Arrows that carry <span style="color:var(--accent4)">red labels</span> indicate where PII would naively appear — and why it does not appear here.</p>
+
+  <div class="diagram-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 680" width="820" height="680" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" font-size="13">
+
+      <!-- Background lanes -->
+      <rect x="20" y="60" width="360" height="600" rx="8" fill="#1a1d27" stroke="#2e3347"/>
+      <rect x="440" y="60" width="360" height="600" rx="8" fill="#1a1d27" stroke="#2e3347"/>
+
+      <!-- Lane headers -->
+      <rect x="20" y="60" width="360" height="40" rx="8" fill="#222535"/>
+      <rect x="20" y="88" width="360" height="12" fill="#222535"/> <!-- square bottom corners -->
+      <text x="200" y="86" text-anchor="middle" fill="#eef0f8" font-weight="700" font-size="14">Member B (Querier)</text>
+
+      <rect x="440" y="60" width="360" height="40" rx="8" fill="#222535"/>
+      <rect x="440" y="88" width="360" height="12" fill="#222535"/>
+      <text x="620" y="86" text-anchor="middle" fill="#eef0f8" font-weight="700" font-size="14">Member A (Responder)</text>
+
+      <!-- Lifelines -->
+      <line x1="200" y1="100" x2="200" y2="650" stroke="#2e3347" stroke-dasharray="6,4"/>
+      <line x1="620" y1="100" x2="620" y2="650" stroke="#2e3347" stroke-dasharray="6,4"/>
+
+      <!-- ── Step 1: normalise & check local ───────────────── -->
+      <!-- local box -->
+      <rect x="60" y="115" width="280" height="38" rx="6" fill="#12141e" stroke="#5b8af5" stroke-width="1.5"/>
+      <text x="200" y="130" text-anchor="middle" fill="#7ed4a4" font-size="12" font-weight="600">normalizeIdentifier(idRaw, scheme)</text>
+      <text x="200" y="146" text-anchor="middle" fill="#7880a0" font-size="11">strip separators · NFC · uppercase · "SCHEME:ID"</text>
+
+      <rect x="60" y="163" width="280" height="28" rx="6" fill="#12141e" stroke="#2e3347"/>
+      <text x="200" y="181" text-anchor="middle" fill="#d4d8e8" font-size="11">Check local pseudonym table → miss</text>
+
+      <!-- ── Step 2: GET /meta ──────────────────────────────── -->
+      <text x="200" y="218" text-anchor="middle" fill="#7880a0" font-size="11" font-style="italic">Step 1 — fetch A's public key</text>
+      <line x1="200" y1="224" x2="612" y2="224" stroke="#5b8af5" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+      <rect x="280" y="207" width="160" height="18" rx="3" fill="#0f1117"/>
+      <text x="360" y="220" text-anchor="middle" fill="#5b8af5" font-size="11" font-weight="600">GET /meta</text>
+
+      <line x1="620" y1="248" x2="208" y2="248" stroke="#7880a0" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-gray)"/>
+      <rect x="310" y="233" width="200" height="18" rx="3" fill="#0f1117"/>
+      <text x="410" y="246" text-anchor="middle" fill="#7880a0" font-size="11">{ activeKeyVersion, publicKeyB64 }</text>
+
+      <!-- ── Step 3: blind ──────────────────────────────────── -->
+      <rect x="60" y="265" width="280" height="32" rx="6" fill="#12141e" stroke="#2e3347"/>
+      <text x="200" y="279" text-anchor="middle" fill="#d4d8e8" font-size="11" font-weight="600">OprfSession.blind(pk_A, utf8(id))</text>
+      <text x="200" y="293" text-anchor="middle" fill="#7880a0" font-size="11">EC point · independent of id</text>
+
+      <!-- ── Step 4: POST /oprf/evaluate ───────────────────── -->
+      <text x="200" y="322" text-anchor="middle" fill="#7880a0" font-size="11" font-style="italic">Step 3 — blind evaluation</text>
+      <line x1="200" y1="328" x2="612" y2="328" stroke="#5b8af5" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+      <rect x="240" y="311" width="240" height="18" rx="3" fill="#0f1117"/>
+      <text x="360" y="324" text-anchor="middle" fill="#5b8af5" font-size="11" font-weight="600">POST /oprf/evaluate { blindedElementB64 }</text>
+
+      <!-- A evaluates -->
+      <rect x="480" y="340" width="260" height="28" rx="6" fill="#12141e" stroke="#2e3347"/>
+      <text x="610" y="354" text-anchor="middle" fill="#d4d8e8" font-size="11" font-weight="600">server.blindEvaluate(request, v)</text>
+      <text x="610" y="364" text-anchor="middle" fill="#7880a0" font-size="11">+ embed DLEQ proof</text>
+
+      <line x1="620" y1="375" x2="208" y2="375" stroke="#7880a0" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-gray)"/>
+      <rect x="310" y="360" width="200" height="18" rx="3" fill="#0f1117"/>
+      <text x="410" y="373" text-anchor="middle" fill="#7880a0" font-size="11">{ evaluationB64 + DLEQ proof }</text>
+
+      <!-- ── Step 5: finalise ───────────────────────────────── -->
+      <rect x="60" y="390" width="280" height="38" rx="6" fill="#12141e" stroke="#7ed4a4" stroke-width="1.5"/>
+      <text x="200" y="406" text-anchor="middle" fill="#7ed4a4" font-size="12" font-weight="600">finalizeAndVerify(evaluationB64)</text>
+      <text x="200" y="421" text-anchor="middle" fill="#7880a0" font-size="11">throws if DLEQ proof is invalid</text>
+
+      <!-- derive -->
+      <rect x="60" y="438" width="280" height="38" rx="6" fill="#12141e" stroke="#2e3347"/>
+      <text x="200" y="453" text-anchor="middle" fill="#d4d8e8" font-size="11" font-weight="600">HKDF(raw) → tag[:16], encKey[:32]</text>
+      <text x="200" y="468" text-anchor="middle" fill="#7880a0" font-size="11">only tag crosses the wire</text>
+
+      <!-- ── Step 6: POST /lookup ───────────────────────────── -->
+      <text x="200" y="496" text-anchor="middle" fill="#7880a0" font-size="11" font-style="italic">Step 6 — oblivious lookup</text>
+      <line x1="200" y1="502" x2="612" y2="502" stroke="#5b8af5" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+      <rect x="270" y="485" width="180" height="18" rx="3" fill="#0f1117"/>
+      <text x="360" y="498" text-anchor="middle" fill="#5b8af5" font-size="11" font-weight="600">POST /lookup { tagB64 }</text>
+
+      <!-- A responds -->
+      <rect x="480" y="514" width="260" height="38" rx="6" fill="#12141e" stroke="#2e3347"/>
+      <text x="610" y="529" text-anchor="middle" fill="#d4d8e8" font-size="11" font-weight="600">hit → AES-GCM({o,w}) [112 B]</text>
+      <text x="610" y="544" text-anchor="middle" fill="#d4d8e8" font-size="11">miss → randomBytes(112)</text>
+
+      <line x1="620" y1="558" x2="208" y2="558" stroke="#7880a0" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-gray)"/>
+      <rect x="290" y="543" width="240" height="18" rx="3" fill="#0f1117"/>
+      <text x="410" y="557" text-anchor="middle" fill="#7880a0" font-size="11">{ nonceB64, blobB64 }  — always 112 B</text>
+
+      <!-- ── Step 7: decrypt ─────────────────────────────────── -->
+      <rect x="60" y="573" width="280" height="52" rx="6" fill="#12141e" stroke="#f0a050" stroke-width="1.5"/>
+      <text x="200" y="589" text-anchor="middle" fill="#f0a050" font-size="12" font-weight="600">AES-256-GCM decrypt</text>
+      <text x="200" y="605" text-anchor="middle" fill="#7ed4a4" font-size="11">auth OK → { owner, wallet } adopted</text>
+      <text x="200" y="619" text-anchor="middle" fill="#e06070" font-size="11">auth fail → no wallet at A (miss)</text>
+
+      <!-- ── "Never leaves B" annotation ──────────────────────── -->
+      <rect x="26" y="624" width="165" height="20" rx="4" fill="#1a1d27" stroke="#e06070"/>
+      <text x="108" y="638" text-anchor="middle" fill="#e06070" font-size="10" font-weight="600">id never leaves B's perimeter</text>
+
+      <!-- ── Arrowhead markers ──────────────────────────────── -->
+      <defs>
+        <marker id="arr-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#5b8af5"/>
+        </marker>
+        <marker id="arr-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#7880a0"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <h3>Key Privacy Invariants</h3>
+  <table>
+    <thead><tr><th>What is <em>never</em> sent on the wire</th><th>How it is protected</th></tr></thead>
+    <tbody>
+      <tr><td>Raw or normalised beneficiary identifier</td><td>OPRF blinding: the blinded point is independent of the input</td></tr>
+      <tr><td>Cleartext wallet address</td><td>AEAD encrypted; decryption key derived only from OPRF output</td></tr>
+      <tr><td>Match/miss decision</td><td>Fixed-length blob; A never receives a success/fail signal from B</td></tr>
+      <tr><td>Set size or intersection size</td><td>No set exchange; responses are always exactly one fixed-length record</td></tr>
+      <tr><td>OPRF raw output</td><td>Intermediate; only tag (HKDF derivative) is sent</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════ PACKAGES ══════════════════════════════ -->
+<section id="packages">
+  <h2>Packages</h2>
+  <div class="pkg-grid">
+    <div class="pkg-card">
+      <div class="name">@bbnew/shared</div>
+      <div class="desc">Identifier normalisation (NFC, separators, scheme prefix), HKDF-SHA-256 via <code>node:crypto</code> WebCrypto, AES-256-GCM AEAD with fixed-length padding (<code>WALLET_BLOB_LEN=112</code>), lookup-tag &amp; wallet-key derivation, Zod-validated wire schemas, wire-audit singleton.</div>
+    </div>
+    <div class="pkg-card">
+      <div class="name">@bbnew/voprf</div>
+      <div class="desc">RFC 9497 VOPRF wrapper around <code>@cloudflare/voprf-ts</code> (P-256/SHA-256). Versioned <code>OprfKeyManager</code> (deterministic key derivation), <code>OprfSession</code> client (blind / finalizeAndVerify with mandatory DLEQ enforcement).</div>
+    </div>
+    <div class="pkg-card">
+      <div class="name">@bbnew/ledger</div>
+      <div class="desc">Simulated blockchain. <code>createWallet()</code> → random 20-byte hex address. <code>loadAssistance</code>, <code>redeem</code> (underflow-guarded), <code>mergeWallets(loser, winner)</code> moves balance and resolves merge chains. Fully in-process; no persistence required.</div>
+    </div>
+    <div class="pkg-card">
+      <div class="name">@bbnew/member</div>
+      <div class="desc">Fastify 5 service per member. Routes: <code>/meta</code>, <code>/oprf/evaluate</code>, <code>/lookup</code>, <code>/onboard</code>, <code>/admin/rotate</code>, <code>/admin/reconcile</code>. Peer-client (<code>crossMemberQuery</code>), pseudonym-table CRUD &amp; rotation rebuild, in-memory + JSON-snapshot repository, per-tag async mutex.</div>
+    </div>
+    <div class="pkg-card">
+      <div class="name">@bbnew/demo</div>
+      <div class="desc">Spins three members in-process (ephemeral ports, shared ledger, fully-meshed peers) and narrates a 7-step scenario: same person → one wallet; different person → different wallet; key rotation invalidates old pseudonyms; concurrent race converges; wire audit asserts no PII or cleartext wallet anywhere.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ USAGE ════════════════════════════════ -->
+<section id="usage">
+  <h2>Usage</h2>
+
+  <h3>Prerequisites</h3>
+  <p>Node.js 20+ with npm 10+. No native modules; runs entirely on Node built-ins and pure-JS packages.</p>
+
+  <h3>Install</h3>
+  <pre><code>git clone &lt;repo&gt;
+cd BBNew
+npm install</code></pre>
+
+  <h3>Narrated end-to-end demo</h3>
+  <pre><code>npm run dev</code></pre>
+  <p>
+    Spins M1, M2, and M3 in-process, runs the full 7-step scenario with console narration,
+    and exits non-zero on any assertion failure. Proves:
+  </p>
+  <ul style="margin: 0.5rem 0 0.85rem 1.5rem; line-height: 1.8;">
+    <li>Same person across M1/M2/M3 → exactly one wallet, balance accumulates correctly.</li>
+    <li>Different person → separate wallet.</li>
+    <li>Key rotation at M1 invalidates old pseudonyms; dedup still works under the new key.</li>
+    <li>Genuine concurrent onboarding at M2 and M3 (mutex off) → mergeWallets converges to one wallet.</li>
+    <li>Wire audit: no raw identifier, no normalised identifier, no cleartext wallet ever appears in any cross-member payload.</li>
+  </ul>
+
+  <h3>Automated tests</h3>
+  <pre><code>npm test           <span class="cm"># all packages, single run</span>
+npm run test:watch <span class="cm"># watch mode</span></code></pre>
+  <p>22 tests across unit (VOPRF round-trip, DLEQ rejection, AEAD tamper, identifier normalization, ledger) and integration (cross-member dedup, rotation, negative-lookup wire invariant, concurrent reconciliation, wire-audit allowlist/denylist).</p>
+
+  <h3>Type-check</h3>
+  <pre><code>npm run typecheck</code></pre>
+
+  <h3>Wire Audit in Tests</h3>
+  <p>The <code>wireAudit</code> singleton (from <code>@bbnew/shared</code>) records every cross-member HTTP request and response in-process. Tests call:</p>
+  <pre><code>wireAudit.setEnabled(<span class="kw">true</span>);
+wireAudit.clear();
+<span class="cm">// ... run scenario ...</span>
+wireAudit.assertNoneLeaked([<span class="str">'UNHCR:AUDIT77'</span>, a.wallet], crossPred);
+wireAudit.assertOnlyAllowedKeys({
+  <span class="str">'/meta'</span>: [<span class="str">'memberId'</span>, <span class="str">'activeKeyVersion'</span>, <span class="str">'activePublicKeyB64'</span>, <span class="str">'answerableVersions'</span>],
+  <span class="str">'/lookup'</span>: [<span class="str">'keyVersion'</span>, <span class="str">'tagB64'</span>, <span class="str">'nonceB64'</span>, <span class="str">'blobB64'</span>],
+}, crossPred);</code></pre>
+</section>
+
+<!-- ═══════════════════════════════ ENDPOINTS ═════════════════════════════ -->
+<section id="endpoints">
+  <h2>API Endpoints (per member)</h2>
+  <table>
+    <thead><tr><th>Method + Path</th><th>Purpose</th><th>Request body</th><th>Response</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>GET /meta</code></td>
+        <td>Advertise active OPRF public key</td>
+        <td>—</td>
+        <td><code>{ memberId, suite, activeKeyVersion, activePublicKeyB64, answerableVersions }</code></td>
+      </tr>
+      <tr>
+        <td><code>POST /oprf/evaluate</code></td>
+        <td>Blind-evaluate a blinded point</td>
+        <td><code>{ keyVersion, evaluationRequestB64 }</code></td>
+        <td><code>{ evaluationB64 }</code> (includes DLEQ proof) or <code>409</code> if version retired</td>
+      </tr>
+      <tr>
+        <td><code>POST /lookup</code></td>
+        <td>Match-oblivious lookup by tag</td>
+        <td><code>{ keyVersion, tagB64 }</code></td>
+        <td><code>{ nonceB64, blobB64 }</code> — always exactly 112 bytes</td>
+      </tr>
+      <tr>
+        <td><code>POST /onboard</code></td>
+        <td>Onboard/assist a beneficiary</td>
+        <td><code>{ idRaw, scheme, amount }</code></td>
+        <td><code>{ wallet, adopted, ownerMemberId }</code></td>
+      </tr>
+      <tr>
+        <td><code>POST /admin/rotate</code></td>
+        <td>Rotate OPRF key (grace → retired cycle)</td>
+        <td>—</td>
+        <td><code>{ activeKeyVersion }</code></td>
+      </tr>
+      <tr>
+        <td><code>POST /admin/reconcile</code></td>
+        <td>Fan-out and merge duplicate wallets</td>
+        <td>—</td>
+        <td><code>{ merges: number }</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Wire allowlist:</strong> cross-member payloads (between member services) are
+    limited to the fields above. No field outside these sets may appear between members —
+    enforced by the wire-audit test suite.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ LIMITATIONS ═══════════════════════════ -->
+<section id="limitations">
+  <h2>Honest Limitations</h2>
+
+  <div class="callout warn">
+    <strong>Still processes personal data (GDPR).</strong> OPRF outputs and lookup tags are
+    <em>pseudonymous</em>, not anonymous. Each member remains a data controller for its own
+    local cleartext identifier store — that store is lawful, necessary, and never shared.
+    The cryptography provides cross-member <em>data minimisation</em>, not anonymisation of
+    a member's own records.
+  </div>
+
+  <div class="callout warn">
+    <strong>Offline dictionary attack.</strong> A member holding its own OPRF key can test
+    offline whether any enumerable identifier (National ID, etc.) was ever the subject of a
+    query against it. PII content never leaks on the wire, but the <em>fact of a query</em>
+    can be inferred by the responder. Mitigated by per-member keys, key rotation, and
+    rate-limiting — not eliminated. This is inherent to OPRFs over low-entropy inputs.
+  </div>
+
+  <div class="callout">
+    <strong>Not constant-time.</strong> <code>@cloudflare/voprf-ts</code> is not
+    constant-time in JavaScript — timing side channels exist. Acceptable for a simulation
+    prototype; documented here.
+  </div>
+
+  <div class="callout">
+    <strong>"Offline" scope is limited.</strong> No central server ✓, beneficiary not
+    online ✓, but member-to-member connectivity <em>is</em> required at onboarding time
+    (deduplication is fundamentally a communication problem). A partitioned member can only
+    provisionally mint and reconcile later via <code>mergeWallets</code> — it is not true
+    offline deduplication.
+  </div>
+
+  <div class="callout">
+    <strong>Simulated blockchain.</strong> <code>@bbnew/ledger</code> is entirely
+    in-process. Wallet addresses are random non-PII hex strings. This is a deliberate
+    scope decision, not a TODO — the cryptographic protocol is the focus.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  BBNew &mdash; WFP Building Blocks gap prototype &mdash; TypeScript monorepo &mdash;
+  VOPRF RFC 9497 / P-256-SHA-256 &mdash; AES-256-GCM &mdash; HKDF-SHA-256
+</footer>
+
+</body>
+</html>

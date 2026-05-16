@@ -1,0 +1,23 @@
+{
+  "name": "bbnew",
+  "private": true,
+  "type": "module",
+  "description": "Privacy-preserving cross-member beneficiary wallet deduplication (WFP Building Blocks gap prototype)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "tsx apps/demo/src/run.ts",
+    "portal": "npm run dev --workspace=@bbnew/portal",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.22.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.6"
+  }
+}

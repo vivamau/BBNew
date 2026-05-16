@@ -1,0 +1,28 @@
+{
+  "name": "@bbnew/portal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n server,vite -c blue,green \"tsx server/index.ts\" \"vite\"",
+    "build": "vite build",
+    "preview": "tsx server/index.ts"
+  },
+  "dependencies": {
+    "@bbnew/ledger": "*",
+    "@bbnew/member": "*",
+    "@fastify/cors": "^10",
+    "better-sqlite3": "^9.6.0",
+    "fastify": "^5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/react": "^18.3.21",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^9.1.2",
+    "vite": "^6.3.5"
+  }
+}
