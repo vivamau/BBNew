@@ -2,6 +2,7 @@ import { NavLink, Routes, Route, Navigate } from 'react-router-dom';
 import SimulationPage from './pages/SimulationPage.tsx';
 import WalletPage from './pages/WalletPage.tsx';
 import MembersPage from './pages/MembersPage.tsx';
+import LedgerPage from './pages/LedgerPage.tsx';
 
 export default function App() {
   return (
@@ -30,6 +31,12 @@ export default function App() {
           >
             ⬡ Members
           </NavLink>
+          <NavLink
+            to="/ledger"
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          >
+            ⛓ Ledger
+          </NavLink>
         </nav>
         <div className="sidebar-footer">
           WFP Building Blocks<br />
@@ -42,6 +49,7 @@ export default function App() {
           <Route path="/simulation" element={<SimulationPage />} />
           <Route path="/wallets" element={<WalletPage />} />
           <Route path="/members" element={<MembersPage />} />
+          <Route path="/ledger" element={<LedgerPage />} />
         </Routes>
       </main>
     </div>
