@@ -52,6 +52,13 @@ hashed** and must never be shared or put on chain. The protocol:
 | `@bbnew/member` | per-member Fastify service: `/meta`, `/oprf/evaluate`, `/lookup`, `/onboard`, `/admin/*` |
 | `@bbnew/demo` | spins 3 members in-process and narrates the end-to-end scenario |
 
+## Documentation
+
+An interactive HTML reference covering the problem, cryptographic approach,
+protocol steps, flow diagram, package descriptions, API endpoints, and honest
+limitations is available at [`docs/index.html`](docs/index.html). Open it
+directly in any browser — no server required.
+
 ## Run
 
 ```bash
@@ -65,6 +72,26 @@ npm run typecheck  # tsc, no emit
 → different wallet; key rotation invalidates old pseudonyms yet still
 deduplicates; a genuine concurrent race converges to one wallet; and an audit of
 every member-to-member payload shows no PII or cleartext wallet.
+
+### Interactive simulation portal
+
+The portal spins up three in-process members and exposes a React UI for
+hands-on exploration of the dedup flow:
+
+```bash
+npm run portal
+```
+
+This starts two processes concurrently:
+
+| Process | Address |
+|---|---|
+| Vite dev server (React UI) | http://localhost:5173 |
+| BFF / member API server | http://127.0.0.1:3001 |
+
+Open **http://localhost:5173** in your browser. The UI lets you onboard
+beneficiaries across members, trigger lookups, observe key rotation, and watch
+the wire-audit log — all without writing any code.
 
 ## Honest limitations
 
